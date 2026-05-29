@@ -182,6 +182,34 @@ const seedAdmin = async () => {
   }
 };
 
+// ─── Seed Default Pricing ─────────────────────────────────────────────────────
+import Pricing from './models/Pricing.js';
+
+const seedPricing = async () => {
+  try {
+    const count = await Pricing.countDocuments();
+    if (count === 0) {
+      const defaultPricing = [
+        { category: 'style', name: 'Pencil Sketch', description: 'Detailed grayscale drawing capturing deep shade gradients.', price: 800, order: 1 },
+        { category: 'style', name: 'Color Portrait', description: 'Vivid hand-colored drawing using professional art pencil mediums.', price: 1500, order: 2 },
+        { category: 'style', name: 'Couple Portrait', description: 'Elegant composition detailing two subjects side-by-side.', price: 2500, order: 3 },
+        { category: 'dimension', name: 'A4 Portrait (Standard)', description: '8.3 x 11.7 in - Perfect for bookshelves and frames.', price: 0, order: 1 },
+        { category: 'dimension', name: 'A3 Portrait (Large)', description: '11.7 x 16.5 in - Eye-catching size for bedroom or living walls.', price: 500, order: 2 },
+        { category: 'dimension', name: 'A2 Portrait (Exhibition)', description: '16.5 x 23.4 in - Premium gallery display size detailing fine textures.', price: 1200, order: 3 },
+        { category: 'delivery', name: 'Standard', description: '5-7 business days delivery (Free)', price: 0, order: 1 },
+        { category: 'delivery', name: 'Express', description: '2-3 business days express delivery (+₹300)', price: 300, order: 2 },
+        { category: 'delivery', name: 'Pick Up', description: 'Pick up locally from YashuArts studio (Free)', price: 0, order: 3 },
+      ];
+      await Pricing.insertMany(defaultPricing);
+      console.log('✅ Seeded default pricing data.');
+    } else {
+      console.log(`✅ Pricing data already exists (${count} records).`);
+    }
+  } catch (error) {
+    console.error('❌ Error seeding pricing data:', error);
+  }
+};
+
 // ─── Start Server ──────────────────────────────────────────────────────────────
 // CRITICAL: Must bind to 0.0.0.0 (all interfaces) so Android Emulator (10.0.2.2)
 //           and physical devices on the same LAN can reach this server.
@@ -193,4 +221,5 @@ server.listen(PORT, HOST, async () => {
   console.log(`📱 Android Emulator URL: http://10.0.2.2:${PORT}/api`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
   await seedAdmin();
+  await seedPricing();
 });
