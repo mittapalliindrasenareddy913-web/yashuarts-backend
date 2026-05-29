@@ -263,7 +263,7 @@ router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(404).json({ message: 'User with this email does not exist.' });
     }
@@ -273,11 +273,40 @@ router.post('/forgot-password', async (req, res) => {
     user.resetPasswordOTPExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save();
 
-    await sendOTPEmail(email, otp);
-
-    res.json({ message: 'OTP sent successfully to your email.' });
+    try {
+      await sendOTPEmail(user.email, otp);
+      res.json({ message: 'OTP sent successfully.' });
+    } catch (emailError) {
+      // Revert OTP if email failed to send
+      user.resetPasswordOTP = '';
+      user.resetPasswordOTPExpires = undefined;
+      await user.save();
+      return res.status(500).json({ message: 'Unable to send OTP. Please try again.' });
+    }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Unable to process request. Please try again later.' });
+  }
+});
+
+// ─── POST /api/auth/verify-otp ────────────────────────────────────────────────
+// @access  Public
+router.post('/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      resetPasswordOTP: otp,
+      resetPasswordOTPExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired OTP code.' });
+    }
+
+    res.json({ message: 'OTP verified successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Unable to process request. Please try again later.' });
   }
 });
 
@@ -288,7 +317,7 @@ router.post('/reset-password', async (req, res) => {
 
   try {
     const user = await User.findOne({
-      email,
+      email: email.toLowerCase(),
       resetPasswordOTP: otp,
       resetPasswordOTPExpires: { $gt: Date.now() },
     });

@@ -23,6 +23,10 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    mobile_number: {
+      type: String,
+      default: '',
+    },
     avatar_url: {
       type: String,
       default: '',

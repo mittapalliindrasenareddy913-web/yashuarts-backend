@@ -14,6 +14,7 @@ import { configureCloudinary } from './config/cloudinary.js';
 
 // Route files
 import authRoutes from './routes/auth.js';
+import profileRoutes from './routes/profile.js';
 import artworkRoutes from './routes/artworks.js';
 import orderRoutes from './routes/orders.js';
 import messageRoutes from './routes/messages.js';
@@ -21,6 +22,7 @@ import reviewRoutes from './routes/reviews.js';
 import uploadRoutes from './routes/upload.js';
 import analyticsRoutes from './routes/analytics.js';
 import appVersionRoutes from './routes/appVersion.js';
+import pricingRoutes from './routes/pricing.js';
 
 // Model to seed admin
 import User from './models/User.js';
@@ -126,6 +128,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/app', appVersionRoutes);
+app.use('/api/pricing', pricingRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
