@@ -23,6 +23,7 @@ import uploadRoutes from './routes/upload.js';
 import analyticsRoutes from './routes/analytics.js';
 import appVersionRoutes from './routes/appVersion.js';
 import pricingRoutes from './routes/pricing.js';
+import cartRoutes from './routes/cart.js';
 
 // Model to seed admin
 import User from './models/User.js';
@@ -130,6 +131,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/app', appVersionRoutes);
 app.use('/api/pricing', pricingRoutes);
+app.use('/api/cart', cartRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
