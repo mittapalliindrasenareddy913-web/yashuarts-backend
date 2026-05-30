@@ -45,6 +45,10 @@ const ArtworkSchema = new mongoose.Schema(
       type: Number,
       default: 4.8,
     },
+    is_visible: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,

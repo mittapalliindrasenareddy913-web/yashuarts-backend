@@ -4,6 +4,8 @@ import Visit from '../models/Visit.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Artwork from '../models/Artwork.js';
+import Like from '../models/Like.js';
+import Cart from '../models/Cart.js';
 import { protect, admin } from '../middleware/auth.js';
 import { sendPushNotification } from '../utils/notifications.js';
 
@@ -179,8 +181,45 @@ router.get('/summary', protect, admin, async (req, res) => {
     // Get notifications count (mocking or query notification events)
     const notificationsCount = await Activity.countDocuments({
       action: { $in: ['Placed Order', 'Submitted Review', 'Registered'] },
-      createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // past 24 hours
+      createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
     });
+
+    // ─── Wishlist analytics ────────────────────────────────────────────────────
+    const totalWishlistAdds = await Like.countDocuments({});
+
+    const mostWishlisted = await Like.aggregate([
+      { $group: { _id: '$artwork_id', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 1 },
+    ]);
+    let mostWishlistedArtwork = null;
+    if (mostWishlisted.length > 0) {
+      const art = await Artwork.findById(mostWishlisted[0]._id).select('title image_url');
+      mostWishlistedArtwork = art ? { title: art.title, image_url: art.image_url, count: mostWishlisted[0].count } : null;
+    }
+
+    // ─── Cart analytics ────────────────────────────────────────────────────────
+    const totalCartAdds = await Cart.countDocuments({});
+
+    const mostCarted = await Cart.aggregate([
+      { $group: { _id: '$artworkId', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 1 },
+    ]);
+    let mostCartedArtwork = null;
+    if (mostCarted.length > 0) {
+      const art = await Artwork.findById(mostCarted[0]._id).select('title image_url');
+      mostCartedArtwork = art ? { title: art.title, image_url: art.image_url, count: mostCarted[0].count } : null;
+    }
+
+    // Conversion rate: users who added to cart AND placed an order
+    const cartUserIds = await Cart.distinct('userId');
+    const convertedUsers = cartUserIds.length > 0
+      ? await Order.distinct('user_id', { user_id: { $in: cartUserIds } })
+      : [];
+    const conversionRate = cartUserIds.length > 0
+      ? Math.round((convertedUsers.length / cartUserIds.length) * 100)
+      : 0;
 
     res.json({
       totalUsers,
@@ -191,6 +230,12 @@ router.get('/summary', protect, admin, async (req, res) => {
       activeCustomers: activeCustomers.length,
       notificationsCount,
       recentActivity,
+      // Wishlist & Cart analytics
+      totalWishlistAdds,
+      mostWishlistedArtwork,
+      totalCartAdds,
+      mostCartedArtwork,
+      conversionRate,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

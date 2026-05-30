@@ -43,7 +43,16 @@ const isLessThan = (a, b) => {
 router.get('/version', (req, res) => {
   try {
     const configPath = resolve(__dirname, '..', 'config', 'appVersion.json');
-    const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+    const fullConfig = JSON.parse(readFileSync(configPath, 'utf-8'));
+
+    // Get packageId from header or query param, default to com.yashuarts.app
+    const packageId =
+      req.headers['x-app-package'] ||
+      req.query.packageId ||
+      'com.yashuarts.app';
+
+    // Resolve app config based on packageId if it exists in the config, otherwise fallback to root
+    const config = fullConfig[packageId] || fullConfig;
 
     // Read the requesting client's current version from header or query param
     const clientVersion =
@@ -63,7 +72,7 @@ router.get('/version', (req, res) => {
       currentVersion: clientVersion,
 
       // Update flags
-      updateRequired: belowMinimum || config.updateRequired,
+      updateRequired: belowMinimum || !!config.updateRequired,
       updateAvailable,
 
       // Play Store / App Store links

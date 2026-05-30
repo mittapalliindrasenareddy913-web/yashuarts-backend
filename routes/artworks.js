@@ -2,6 +2,7 @@ import express from 'express';
 import Artwork from '../models/Artwork.js';
 import Like from '../models/Like.js';
 import { protect, admin } from '../middleware/auth.js';
+import { deleteFromCloudinary } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -10,7 +11,8 @@ const router = express.Router();
 // @access  Private
 router.get('/', protect, async (req, res) => {
   try {
-    const artworks = await Artwork.find({}).sort({ createdAt: -1 });
+    const filter = req.user && req.user.role === 'admin' ? {} : { is_visible: { $ne: false } };
+    const artworks = await Artwork.find(filter).sort({ createdAt: -1 });
     res.json(artworks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -55,7 +57,7 @@ router.get('/:id', protect, async (req, res) => {
 // @route   POST /api/artworks
 // @access  Private/Admin
 router.post('/', protect, admin, async (req, res) => {
-  const { title, description, category, price, image_url, is_featured } = req.body;
+  const { title, description, category, price, image_url, is_featured, is_visible } = req.body;
 
   try {
     const artwork = new Artwork({
@@ -65,9 +67,29 @@ router.post('/', protect, admin, async (req, res) => {
       price,
       image_url,
       is_featured: is_featured || false,
+      is_visible: is_visible !== undefined ? is_visible : true,
     });
 
     const createdArtwork = await artwork.save();
+
+    // Emit socket event to notify clients of a new published artwork
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('artwork_published', {
+        id: createdArtwork._id,
+        title: createdArtwork.title,
+        description: createdArtwork.description,
+        category: createdArtwork.category,
+        price: createdArtwork.price,
+        image_url: createdArtwork.image_url,
+        is_featured: createdArtwork.is_featured,
+        is_visible: createdArtwork.is_visible,
+        likes_count: createdArtwork.likes_count,
+        views_count: createdArtwork.views_count,
+        created_at: createdArtwork.createdAt,
+      });
+    }
+
     res.status(201).json(createdArtwork);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -78,7 +100,7 @@ router.post('/', protect, admin, async (req, res) => {
 // @route   PUT /api/artworks/:id
 // @access  Private/Admin
 router.put('/:id', protect, admin, async (req, res) => {
-  const { title, description, category, price, image_url, is_featured } = req.body;
+  const { title, description, category, price, image_url, is_featured, is_visible } = req.body;
 
   try {
     const artwork = await Artwork.findById(req.params.id);
@@ -90,8 +112,28 @@ router.put('/:id', protect, admin, async (req, res) => {
       artwork.price = price !== undefined ? price : artwork.price;
       artwork.image_url = image_url || artwork.image_url;
       artwork.is_featured = is_featured !== undefined ? is_featured : artwork.is_featured;
+      artwork.is_visible = is_visible !== undefined ? is_visible : artwork.is_visible;
 
       const updatedArtwork = await artwork.save();
+
+      // Emit socket event for artwork updates
+      const io = req.app.get('socketio');
+      if (io) {
+        io.emit('artwork_updated', {
+          id: updatedArtwork._id,
+          title: updatedArtwork.title,
+          description: updatedArtwork.description,
+          category: updatedArtwork.category,
+          price: updatedArtwork.price,
+          image_url: updatedArtwork.image_url,
+          is_featured: updatedArtwork.is_featured,
+          is_visible: updatedArtwork.is_visible,
+          likes_count: updatedArtwork.likes_count,
+          views_count: updatedArtwork.views_count,
+          created_at: updatedArtwork.createdAt,
+        });
+      }
+
       res.json(updatedArtwork);
     } else {
       res.status(404).json({ message: 'Artwork not found' });
@@ -109,9 +151,26 @@ router.delete('/:id', protect, admin, async (req, res) => {
     const artwork = await Artwork.findById(req.params.id);
 
     if (artwork) {
+      // Remove image from Cloudinary if it exists
+      if (artwork.image_url) {
+        try {
+          await deleteFromCloudinary(artwork.image_url);
+        } catch (cloudinaryErr) {
+          console.error('[Cloudinary] Failed to delete image during artwork deletion:', cloudinaryErr);
+          // Proceed with MongoDB deletion anyway to avoid leaving orphans in DB
+        }
+      }
+
       await Artwork.deleteOne({ _id: req.params.id });
       // Clean up related likes
       await Like.deleteMany({ artwork_id: req.params.id });
+
+      // Emit socket event for deleted artwork
+      const io = req.app.get('socketio');
+      if (io) {
+        io.emit('artwork_deleted', req.params.id);
+      }
+
       res.json({ message: 'Artwork removed' });
     } else {
       res.status(404).json({ message: 'Artwork not found' });
