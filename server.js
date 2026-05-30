@@ -219,10 +219,17 @@ const seedPricing = async () => {
 const PORT = parseInt(process.env.PORT || '5000', 10);
 const HOST = '0.0.0.0';
 
+import { isFirebaseInitialized } from './config/firebase.js';
+
 server.listen(PORT, HOST, async () => {
   console.log(`🚀 YashuArts API running on http://${HOST}:${PORT}`);
   console.log(`📱 Android Emulator URL: http://10.0.2.2:${PORT}/api`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  if (isFirebaseInitialized) {
+    console.log('✅ Firebase Admin initialized successfully');
+  } else {
+    console.log('❌ Firebase credentials missing. FCM disabled.');
+  }
   await seedAdmin();
   await seedPricing();
 });
