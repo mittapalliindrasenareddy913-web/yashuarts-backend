@@ -85,6 +85,15 @@ router.post('/', protect, async (req, res) => {
       io.to(req.user._id.toString()).emit('new_message', savedMessage);
     }
 
+    // Trigger offline FCM Push Notification
+    try {
+      const { sendPushNotification } = await import('../utils/notifications.js');
+      const senderName = req.user.full_name || 'Someone';
+      await sendPushNotification(req.app, recipientId, `New Message from ${senderName} 💬`, message);
+    } catch (pushErr) {
+      console.error('Failed to send push notification for message:', pushErr);
+    }
+
     res.status(201).json(savedMessage);
   } catch (error) {
     res.status(500).json({ message: error.message });
