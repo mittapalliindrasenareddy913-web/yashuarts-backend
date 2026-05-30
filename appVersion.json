@@ -1,0 +1,36 @@
+{
+  "latestVersion": "1.0.3",
+  "minimumVersion": "1.0.3",
+  "updateRequired": false,
+  "playStoreUrl": "https://play.google.com/store/apps/details?id=com.yashuarts.app",
+  "releaseNotes": [
+    "Official release of YashuArts User App",
+    "Browse and commission custom artworks",
+    "Real-time order tracking",
+    "Secure payment processing"
+  ],
+  "com.yashuarts.app": {
+    "latestVersion": "1.0.3",
+    "minimumVersion": "1.0.3",
+    "updateRequired": false,
+    "playStoreUrl": "https://play.google.com/store/apps/details?id=com.yashuarts.app",
+    "releaseNotes": [
+      "Official release of YashuArts User App",
+      "Browse and commission custom artworks",
+      "Real-time order tracking",
+      "Secure payment processing"
+    ]
+  },
+  "com.yashuarts.admin": {
+    "latestVersion": "1.0.3",
+    "minimumVersion": "1.0.3",
+    "updateRequired": false,
+    "playStoreUrl": "https://play.google.com/store/apps/details?id=com.yashuarts.admin",
+    "releaseNotes": [
+      "Official release of YashuArts Admin App",
+      "Manage artworks and gallery visibility",
+      "Track checkout funnel analytics",
+      "Process custom commissions"
+    ]
+  }
+}
