@@ -121,6 +121,7 @@ app.get('/privacy-policy', (req, res) => {
 
 // ─── Mount API Routes ──────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/artworks', artworkRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/messages', messageRoutes);

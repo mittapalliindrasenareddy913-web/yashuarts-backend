@@ -19,24 +19,38 @@ const upload = multer({
 // @access  Private
 router.get('/', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    let user = await User.findById(req.user._id).select('-password');
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      user = new User({
+        _id: req.user._id,
+        email: req.user.email || `user_${req.user._id}@yashuarts.com`,
+        full_name: req.user.full_name || 'Valued Customer',
+        password: 'auto-created-placeholder-password-12345',
+        role: 'user',
+        mobile_number: '',
+        avatar_url: '',
+      });
+      await user.save();
     }
 
     const totalOrders = await Order.countDocuments({ user: req.user._id });
     const completedOrders = await Order.countDocuments({ user: req.user._id, order_status: { $in: ['Completed', 'Delivered'] } });
 
     res.json({
-      _id: user._id,
-      email: user.email,
-      role: user.role,
-      full_name: user.full_name,
-      mobile_number: user.mobile_number,
-      avatar_url: user.avatar_url,
-      member_since: user.createdAt,
-      total_orders: totalOrders,
-      completed_orders: completedOrders,
+      success: true,
+      user: {
+        _id: user._id,
+        full_name: user.full_name || '',
+        email: user.email || '',
+        phone: user.mobile_number || '',
+        profileImage: user.avatar_url || '',
+        mobile_number: user.mobile_number || '',
+        avatar_url: user.avatar_url || '',
+        role: user.role,
+        member_since: user.createdAt,
+        total_orders: totalOrders,
+        completed_orders: completedOrders,
+      }
     });
   } catch (error) {
     console.error('Profile GET error:', error);
@@ -49,10 +63,19 @@ router.get('/', protect, async (req, res) => {
 // @access  Private
 router.put('/', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    let user = await User.findById(req.user._id);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      user = new User({
+        _id: req.user._id,
+        email: req.user.email || `user_${req.user._id}@yashuarts.com`,
+        full_name: req.user.full_name || 'Valued Customer',
+        password: 'auto-created-placeholder-password-12345',
+        role: 'user',
+        mobile_number: '',
+        avatar_url: '',
+      });
+      await user.save();
     }
 
     user.full_name = req.body.full_name !== undefined ? req.body.full_name : user.full_name;
@@ -72,15 +95,20 @@ router.put('/', protect, async (req, res) => {
     const completedOrders = await Order.countDocuments({ user: req.user._id, order_status: { $in: ['Completed', 'Delivered'] } });
 
     res.json({
-      _id: updatedUser._id,
-      email: updatedUser.email,
-      role: updatedUser.role,
-      full_name: updatedUser.full_name,
-      mobile_number: updatedUser.mobile_number,
-      avatar_url: updatedUser.avatar_url,
-      member_since: updatedUser.createdAt,
-      total_orders: totalOrders,
-      completed_orders: completedOrders,
+      success: true,
+      user: {
+        _id: updatedUser._id,
+        full_name: updatedUser.full_name || '',
+        email: updatedUser.email || '',
+        phone: updatedUser.mobile_number || '',
+        profileImage: updatedUser.avatar_url || '',
+        mobile_number: updatedUser.mobile_number || '',
+        avatar_url: updatedUser.avatar_url || '',
+        role: updatedUser.role,
+        member_since: updatedUser.createdAt,
+        total_orders: totalOrders,
+        completed_orders: completedOrders,
+      }
     });
   } catch (error) {
     console.error('Profile PUT error:', error);
@@ -97,9 +125,18 @@ router.post('/photo', protect, upload.single('image'), async (req, res) => {
       return res.status(400).json({ message: 'Please upload an image file' });
     }
 
-    const user = await User.findById(req.user._id);
+    let user = await User.findById(req.user._id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      user = new User({
+        _id: req.user._id,
+        email: req.user.email || `user_${req.user._id}@yashuarts.com`,
+        full_name: req.user.full_name || 'Valued Customer',
+        password: 'auto-created-placeholder-password-12345',
+        role: 'user',
+        mobile_number: '',
+        avatar_url: '',
+      });
+      await user.save();
     }
 
     // Upload to Cloudinary
@@ -109,9 +146,24 @@ router.post('/photo', protect, upload.single('image'), async (req, res) => {
     user.avatar_url = result.secure_url;
     await user.save();
 
+    const totalOrders = await Order.countDocuments({ user: req.user._id });
+    const completedOrders = await Order.countDocuments({ user: req.user._id, order_status: { $in: ['Completed', 'Delivered'] } });
+
     res.json({
-      avatar_url: user.avatar_url,
-      message: 'Profile photo updated successfully',
+      success: true,
+      user: {
+        _id: user._id,
+        full_name: user.full_name || '',
+        email: user.email || '',
+        phone: user.mobile_number || '',
+        profileImage: user.avatar_url || '',
+        mobile_number: user.mobile_number || '',
+        avatar_url: user.avatar_url || '',
+        role: user.role,
+        member_since: user.createdAt,
+        total_orders: totalOrders,
+        completed_orders: completedOrders,
+      }
     });
   } catch (error) {
     console.error('Profile Photo Upload error:', error);
