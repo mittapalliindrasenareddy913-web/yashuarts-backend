@@ -26,3 +26,29 @@ export const uploadToCloudinary = (fileBuffer, folder = 'yashuarts') => {
     uploadStream.end(fileBuffer);
   });
 };
+
+export const deleteFromCloudinary = async (imageUrl) => {
+  if (!imageUrl) return;
+  try {
+    // Extract public_id from Cloudinary URL
+    // Format: https://res.cloudinary.com/cloud_name/image/upload/v1234567/folder/image.jpg
+    const parts = imageUrl.split('/image/upload/');
+    if (parts.length < 2) return;
+
+    const pathAndFilename = parts[1];
+    // Remove version prefix if exists (e.g. v1234567/sample.jpg -> sample.jpg)
+    const afterVersion = pathAndFilename.replace(/^v\d+\//, '');
+
+    // Remove file extension (e.g. yashuarts/sample.jpg -> yashuarts/sample)
+    const publicId = afterVersion.split('.').slice(0, -1).join('.') || afterVersion;
+
+    console.log(`[Cloudinary] Deleting asset with publicId: ${publicId}`);
+    const result = await cloudinary.uploader.destroy(publicId);
+    console.log('[Cloudinary] Deletion result:', result);
+    return result;
+  } catch (error) {
+    console.error('[Cloudinary] Deletion error:', error);
+    throw error;
+  }
+};
+
